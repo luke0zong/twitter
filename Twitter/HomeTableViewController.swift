@@ -23,12 +23,22 @@ class HomeTableViewController: UITableViewController {
         myRefreshControl.addTarget(self, action: #selector(loadTweets), for: .valueChanged)
         
         tableView.refreshControl = myRefreshControl
+        
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 150
 
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
 
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         // self.navigationItem.rightBarButtonItem = self.editButtonItem
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        // Note: Need the tweet view to be fullscreen to trigger this
+        super.viewDidAppear(animated)
+        print("Home page appear!")
+        self.loadTweets()
     }
     
     @objc func loadMoreTweets() {
@@ -123,15 +133,35 @@ class HomeTableViewController: UITableViewController {
         
         if let imageData = data {
             cell.profileImage.image = UIImage(data: imageData)
+            // set image to round
+            cell.profileImage.layer.cornerRadius = cell.profileImage.frame.width / 2
+            cell.profileImage.clipsToBounds = true
         }
         
         cell.userNameLabel.text = user["name"] as? String
         cell.tweetContentLabel.text = tweet["text"] as? String
+        
+        cell.timeLabel.text = getRelativeTime(timeString: (tweet["created_at"] as? String)!)
 
+        // Set fav for the tweet
+        cell.setFavorited(tweet["favorited"] as! Bool)
+        
+        // set the tweetID
+        cell.tweetID = tweet["id"] as! Int
         
         return cell
         
     }
+    
+    func getRelativeTime(timeString: String) -> String{
+            let time: Date
+            let dateFormatter = DateFormatter()
+            //"created_at": "Wed May 23 06:01:13 +0000 2007",
+            dateFormatter.dateFormat = "EEE MMM d HH:mm:ss Z y"
+            time = dateFormatter.date(from: timeString)!
+            return time.timeAgoDisplay()
+        }
+    
     
     
     
@@ -203,4 +233,38 @@ class HomeTableViewController: UITableViewController {
     }
     */
 
+}
+
+extension Date {
+    func timeAgoDisplay() -> String {
+        let secondsAgo = Int(Date().timeIntervalSince(self))
+        
+        let minute = 60
+        let hour = 60 * minute
+        let day = 24 * hour
+        let week = 7 * day
+
+        if secondsAgo < minute {
+            if secondsAgo == 1 || secondsAgo == 0 {
+                return "\(secondsAgo) sec ago"}
+            return "\(secondsAgo) secs ago"
+
+        } else if secondsAgo < hour {
+            if secondsAgo <= 60 {return "1 min ago"}
+            return "\(secondsAgo / minute) mins ago"
+            
+        } else if secondsAgo < day {
+            if secondsAgo <= 3600 {
+                return "1 hr ago"}
+            return "\(secondsAgo / hour) hrs ago"
+            
+        } else if secondsAgo < week {
+            if secondsAgo < 3600*24*2 {
+                return "1 day ago"}
+            return "\(secondsAgo / day) days ago"
+        }
+        if secondsAgo < 3600*24*7*2 {
+            return "1 week ago"}
+        return "\(secondsAgo / week) weeks ago"
+    }
 }
