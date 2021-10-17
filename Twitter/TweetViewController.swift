@@ -7,10 +7,12 @@
 //
 
 import UIKit
+import AlamofireImage
 
 class TweetViewController: UIViewController {
     
     
+    @IBOutlet weak var profileImage: UIImageView!
     @IBOutlet weak var tweetTextView: UITextView!
     
     override func viewDidLoad() {
@@ -18,6 +20,8 @@ class TweetViewController: UIViewController {
         
         // Do any additional setup after loading the view.
         tweetTextView.becomeFirstResponder()
+        
+        self.setProfile()
     }
     
     
@@ -44,6 +48,24 @@ class TweetViewController: UIViewController {
             }
             
         }
+    }
+    
+    func setProfile() {
+        TwitterAPICaller.client?.getProfile(success: { (info: NSDictionary) in
+            let UrlString = (info["profile_image_url_https"] as! String).replacingOccurrences(of: "normal", with: "bigger")
+            let profileURL = URL(string: UrlString)
+            
+            let data = try? Data(contentsOf: profileURL!)
+            
+            if let imageData = data {
+                self.profileImage.image = UIImage(data: imageData)
+                // set image to round
+                self.profileImage.layer.cornerRadius = self.profileImage.frame.width / 2
+                self.profileImage.clipsToBounds = true
+            }
+        }, failure: { (Error) in
+            print("Error: \(Error)")
+        })
     }
     
     
